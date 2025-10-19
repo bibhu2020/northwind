@@ -1,6 +1,7 @@
 name: Deploy Northwind Weather Api to Hugging Face
 
 env:
+  PROJECT_BASE: nestjs/northwind/apps
   PROJECT_PATH: nestjs/northwind/apps/weatherapi
   HF_TOKEN: ${{ secrets.HF_TOKEN }}
   HF_USERNAME: ${{ secrets.HF_USERNAME }}
@@ -33,6 +34,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install huggingface_hub
 
+    - name: Prepare Space files
+      run: |
+        echo "Copying package.json from PROJECT_BASE to PROJECT_PATH..."
+        cp $PROJECT_BASE/package.json $PROJECT_PATH/ || echo "package.json not found in $PROJECT_BASE"
+
+        echo "Verifying copied files:"
+        ls -la $PROJECT_PATH        
+        
     - name: Create upload script
       run: |
         cat << 'EOF' > upload_to_hf.py
