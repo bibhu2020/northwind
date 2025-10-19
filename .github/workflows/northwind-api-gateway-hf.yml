@@ -1,7 +1,7 @@
 name: Deploy Northwind Api Gateway to Hugging Face
 
 env:
-  PROJECT_BASE: nestjs/northwind/apps
+  PROJECT_BASE: nestjs/northwind
   PROJECT_PATH: nestjs/northwind/apps/apigateway
   HF_TOKEN: ${{ secrets.HF_TOKEN }}
   HF_USERNAME: ${{ secrets.HF_USERNAME }}
