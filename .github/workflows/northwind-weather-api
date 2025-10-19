@@ -1,0 +1,97 @@
+name: Deploy Northwind Weather Api to Hugging Face
+
+env:
+  PROJECT_PATH: vuejs/northwind
+  HF_TOKEN: ${{ secrets.HF_TOKEN }}
+  HF_USERNAME: ${{ secrets.HF_USERNAME }}
+  HF_SPACE_NAME: ${{ secrets.HF_SPACE_NORTHWIND_WEATHER_API }}
+  REPO_ID: ${{ secrets.HF_USERNAME }}/${{ secrets.HF_SPACE_NORTHWIND_WEATHER_API }}
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'nestjs/northwind/apps/weatherapi/**'
+  workflow_dispatch:
+
+jobs:
+  upload-to-hf:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install huggingface_hub
+
+    - name: Create upload script
+      run: |
+        cat << 'EOF' > upload_to_hf.py
+        from huggingface_hub import HfApi, create_repo
+        import os, sys
+        from pathlib import Path
+
+        PROJECT_PATH = os.environ["PROJECT_PATH"]
+        REPO_ID = os.environ["REPO_ID"]
+        TOKEN = os.environ["HF_TOKEN"]
+
+        def main():
+            api = HfApi()
+            try:
+                # Create Space (if not already exists)
+                create_repo(
+                    repo_id=REPO_ID,
+                    token=TOKEN,
+                    repo_type="space",
+                    space_sdk="static",
+                    private=False
+                )
+                print(f"✅ Created new static space: {REPO_ID}")
+            except Exception as e:
+                if "You already created this space" in str(e):
+                    print(f"ℹ️ Space {REPO_ID} already exists, continuing upload.")
+                else:
+                    print(f"❌ Error creating space: {e}")
+                    sys.exit(1)
+
+            try:
+                print(f"🚀 Uploading build folder {dist_path} to Hugging Face Space {REPO_ID}...")
+                api.upload_folder(
+                    folder_path=dist_path,
+                    repo_id=REPO_ID,
+                    repo_type="space",
+                    token=TOKEN,
+                    ignore_patterns=[
+                        ".env*",
+                        ".venv/**",
+                        "venv/**",
+                        "__pycache__/**",
+                        "*.pyc",
+                        ".git/**",
+                        ".pytest_cache/**",
+                        ".coverage"
+                    ]
+                )
+                print("✅ Upload completed successfully")
+            except Exception as e:
+                print(f"❌ Error uploading files: {e}")
+                sys.exit(1)
+
+        if __name__ == "__main__":
+            main()
+        EOF
+
+    - name: Upload to Hugging Face Hub
+      run: python upload_to_hf.py
