@@ -20,8 +20,9 @@ defineProps<{
   <div class="bg-white rounded-2xl shadow-md p-6 transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg">
     <!-- Header Section -->
     <div class="flex items-center gap-4">
-      <!-- Profile Picture -->
+            <!-- Profile Picture -->
       <div class="w-16 h-16 aspect-square rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-blue-600 text-white text-xl font-bold">
+        <!-- Commented out until PhotoURL is added to the customer type
         <img
           v-if="customer.PhotoURL"
           :src="customer.PhotoURL"
@@ -29,6 +30,10 @@ defineProps<{
           class="w-full h-full object-cover"
         />
         <span v-else>
+          {{ customer.ContactName.charAt(0).toUpperCase() }}
+        </span>
+        -->
+        <span>
           {{ customer.ContactName.charAt(0).toUpperCase() }}
         </span>
       </div>
