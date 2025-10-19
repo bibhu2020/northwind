@@ -1,7 +1,7 @@
 name: Deploy Northwind Weather Api to Hugging Face
 
 env:
-  PROJECT_PATH: vuejs/northwind
+  PROJECT_PATH: nestjs/northwind/apps/weatherapi
   HF_TOKEN: ${{ secrets.HF_TOKEN }}
   HF_USERNAME: ${{ secrets.HF_USERNAME }}
   HF_SPACE_NAME: ${{ secrets.HF_SPACE_NORTHWIND_WEATHER_API }}
