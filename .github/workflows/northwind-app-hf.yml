@@ -18,6 +18,9 @@ on:
 jobs:
   upload-to-hf:
     runs-on: ubuntu-latest
+    permissions:
+      packages: read
+      contents: read
 
     steps:
     - name: Checkout repository
@@ -27,6 +30,14 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
+        registry-url: 'https://npm.pkg.github.com'
+        scope: '@bibhu2020'
+
+    # - name: Authenticate with Azure DevOps npm
+    #   run: |
+    #     echo "registry=https://pkgs.dev.azure.com/GDCBADE/1f330fba-4dfd-4cfd-86ed-2abfe3d3757c/_packaging/SRE_Scripts/npm/registry/" > .npmrc
+    #     echo "//pkgs.dev.azure.com/GDCBADE/1f330fba-4dfd-4cfd-86ed-2abfe3d3757c/_packaging/SRE_Scripts/npm/registry/:_authToken=${{ secrets.AZURE_DEVOPS_PAT }}" >> .npmrc
+    #     echo "always-auth=true" >> .npmrc
 
     - name: Build Vue app
       run: |
