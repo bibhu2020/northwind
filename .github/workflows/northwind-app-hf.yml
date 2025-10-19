@@ -95,8 +95,7 @@ jobs:
                         "*.pyc",
                         ".git/**",
                         ".pytest_cache/**",
-                        ".coverage",
-                        "node_modules/**"
+                        ".coverage"
                     ]
                 )
                 print("✅ Upload completed successfully")
