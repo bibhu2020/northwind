@@ -178,18 +178,9 @@ jobs:
 
     - name: Check files in libs/proto
       run: |
-        if [ -n "$(ls -A libs/proto 2>/dev/null)" ]; then
-          echo "Files exist in libs/proto"
-          ls -la libs/proto
-          ls -la libs/common
-          ls -la libs
-        else
-          echo "No files in libs/proto"
-          ls -la libs/proto
-          ls -la libs/common
-          ls -la libs
-        fi
-    
+        echo "Listing $PROJECT_PATH recursively:"
+        ls -R $PROJECT_PATH
+
         
     - name: Upload to Hugging Face Hub
       run: python upload_to_hf.py
