@@ -37,12 +37,12 @@ jobs:
 
     - name: Prepare Space files
       run: |
-        echo "Copying missing nestjs packaging files from PROJECT_BASE to PROJECT_PATH..."
-        rsync -av --exclude='.npmrc' --exclude='README.md' $PROJECT_BASE/ $PROJECT_PATH/ \
+        echo "Copying missing nestjs packaging files (files only) from PROJECT_BASE to PROJECT_PATH..."
+        rsync -av --exclude='.npmrc' --exclude='README.md' --exclude='*/' $PROJECT_BASE/ $PROJECT_PATH/ \
           || echo "No files copied from $PROJECT_BASE"
 
         echo "Verifying copied files:"
-        ls -la $PROJECT_PATH    
+        ls -la $PROJECT_PATH
 
     - name: Configure npm for GitHub Packages
       run: |
