@@ -78,6 +78,8 @@ jobs:
         # Build the NestJS app
         RUN npm run build:apigateway
 
+        RUN ls -l
+
         # Start the application
         CMD ["node", "dist/apps/apigateway/main.js"]
 
