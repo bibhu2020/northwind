@@ -4,8 +4,8 @@ env:
   PROJECT_PATH: nestjs/northwind
   HF_TOKEN: ${{ secrets.HF_TOKEN }}
   HF_USERNAME: ${{ secrets.HF_USERNAME }}
-  HF_SPACE_NAME: "northwind-api-gateway" #${{ secrets.HF_SPACE_NORTHWIND_API_GATEWAY }}
-  REPO_ID: ${{ secrets.HF_USERNAME }}/"northwind-api-gateway"  #${{ secrets.HF_SPACE_NORTHWIND_API_GATEWAY }}
+  HF_SPACE_NAME: northwind-api-gateway #${{ secrets.HF_SPACE_NORTHWIND_API_GATEWAY }}
+  REPO_ID: ${{ secrets.HF_USERNAME }}/northwind-api-gateway  #${{ secrets.HF_SPACE_NORTHWIND_API_GATEWAY }}
 
 on:
   push:
