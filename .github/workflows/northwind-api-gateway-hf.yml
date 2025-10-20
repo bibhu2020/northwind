@@ -26,15 +26,12 @@ jobs:
       # with:
       #   fetch-depth:   0  # this is important to fetch all folders
 
-    - name: List project structure
+    - name: List all folders recursively with file counts
       run: |
-        echo "Listing all subfolders and file counts in $PROJECT_PATH:"
-        for dir in "$PROJECT_PATH"/*/; do
-          if [ -d "$dir" ]; then
-            subfolder=$(basename "$dir")
-            count=$(find "$dir" -type f | wc -l)
-            echo "Folder: $subfolder, Files: $count"
-          fi
+        echo "Listing all folders in $PROJECT_PATH recursively with file counts:"
+        find "$PROJECT_PATH" -type d | while read dir; do
+            file_count=$(find "$dir" -maxdepth 1 -type f | wc -l)
+            echo "Folder: $dir, Files: $file_count"
         done
   
     - name: Set up Python
