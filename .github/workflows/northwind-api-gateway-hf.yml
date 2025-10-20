@@ -154,6 +154,7 @@ jobs:
                     folder_path=PROJECT_PATH,
                     repo_id=REPO_ID,
                     repo_type="space",
+                    token=TOKEN,
                     ignore_patterns=[
                         ".env*",
                         ".venv/**",
@@ -165,7 +166,6 @@ jobs:
                         ".coverage",
                         "dockers/**",
                     ],
-                    max_workers=8  # parallel uploads for faster processing
                 )
                 print("Upload completed successfully")
             except Exception as e:
