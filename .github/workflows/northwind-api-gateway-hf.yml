@@ -36,11 +36,16 @@ jobs:
 
     - name: Prepare Space files
       run: |
-        echo "Copying package.json from PROJECT_BASE to PROJECT_PATH..."
-        cp $PROJECT_BASE/package.json $PROJECT_PATH/ || echo "package.json not found in $PROJECT_BASE"
+        echo "Copying packaging files from PROJECT_BASE to PROJECT_PATH..."
+        cp $PROJECT_BASE/*.* $PROJECT_PATH/ || echo "package.json not found in $PROJECT_BASE"
 
         echo "Verifying copied files:"
-        ls -la $PROJECT_PATH        
+        ls -la $PROJECT_PATH    
+
+    - name: Set up npmrc
+      run: |
+        echo "@bibhu2020:registry=https://npm.pkg.github.com" > $PROJECT_PATH/.npmrc
+        echo "//npm.pkg.github.com/:_authToken=${GH_TOKEN}" >> $PROJECT_PATH/.npmrc
 
     - name: Create upload script
       run: |
