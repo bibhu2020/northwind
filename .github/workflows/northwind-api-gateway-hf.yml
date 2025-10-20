@@ -101,7 +101,7 @@ jobs:
     - name: Create upload script
       run: |
         cat << 'EOF' > upload_to_hf.py
-        from huggingface_hub import HfApi, create_repo
+        from huggingface_hub import HfApi, create_repo, HfFolder
         import os
         import sys
         from pathlib import Path
@@ -128,6 +128,7 @@ jobs:
         def main():
             # Initialize the Hugging Face API
             api = HfApi()
+            HfFolder.save_token(TOKEN)
             
             try:
                 # Try to create the repository
@@ -135,7 +136,7 @@ jobs:
                     repo_id=REPO_ID,
                     token=TOKEN,
                     repo_type="space",
-                    space_sdk="gradio",
+                    space_sdk="docker",
                     private=False
                 )
                 print(f"Created new repository: {REPO_ID}")
@@ -147,13 +148,11 @@ jobs:
                     sys.exit(1)
             
             try:
-              # Upload the folder in batches, handling large folders
               print(f"Uploading files to {REPO_ID}...")
               api.upload_large_folder(
                   folder_path=PROJECT_PATH,
                   repo_id=REPO_ID,
                   repo_type="space",
-                  use_auth_token=TOKEN,
                   ignore_patterns=[
                       ".env*",
                       ".venv/**",
@@ -162,9 +161,7 @@ jobs:
                       "*.pyc",
                       ".git/**",
                       ".pytest_cache/**",
-                      ".coverage",
-                      "node_modules/**",
-                      "dockers/**"
+                      ".coverage"
                   ]
               )
               print("Upload completed successfully")
