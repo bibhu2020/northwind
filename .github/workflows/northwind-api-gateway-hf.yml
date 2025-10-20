@@ -26,6 +26,17 @@ jobs:
       # with:
       #   fetch-depth:   0  # this is important to fetch all folders
 
+    - name: List project structure
+      run: |
+        echo "Listing all subfolders and file counts in $PROJECT_PATH:"
+        for dir in "$PROJECT_PATH"/*/; do
+          if [ -d "$dir" ]; then
+            subfolder=$(basename "$dir")
+            count=$(find "$dir" -type f | wc -l)
+            echo "Folder: $subfolder, Files: $count"
+          fi
+        done
+  
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -178,11 +189,5 @@ jobs:
             main()
         EOF
 
-    - name: Check files in libs/proto
-      run: |
-        echo "Listing $PROJECT_PATH recursively:"
-        ls -R $PROJECT_PATH
-
-        
     - name: Upload to Hugging Face Hub
       run: python upload_to_hf.py
