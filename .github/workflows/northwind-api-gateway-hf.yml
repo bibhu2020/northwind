@@ -12,6 +12,7 @@ on:
   push:
     branches:
       - main
+      - 54-northwind-hf
     paths:
       - 'nestjs/northwind/apps/apigateway/**'
   workflow_dispatch:
