@@ -147,28 +147,31 @@ jobs:
                     sys.exit(1)
             
             try:
-                # Upload the folder with exclusions
-                print(f"Uploading files to {REPO_ID}...")
-                api.upload_folder(
-                    folder_path=PROJECT_PATH,
-                    repo_id=REPO_ID,
-                    repo_type="space",
-                    token=TOKEN,
-                    ignore_patterns=[
-                        ".env*",
-                        ".venv/**",
-                        "venv/**",
-                        "__pycache__/**",
-                        "*.pyc",
-                        ".git/**",
-                        ".pytest_cache/**",
-                        ".coverage"
-                    ]
-                )
-                print("Upload completed successfully")
-            except Exception as e:
-                print(f"Error uploading files: {e}")
-                sys.exit(1)
+              # Upload the folder in batches, handling large folders
+              print(f"Uploading files to {REPO_ID}...")
+              api.upload_large_folder(
+                  folder_path=PROJECT_PATH,
+                  repo_id=REPO_ID,
+                  repo_type="space",
+                  token=TOKEN,
+                  ignore_patterns=[
+                      ".env*",
+                      ".venv/**",
+                      "venv/**",
+                      "__pycache__/**",
+                      "*.pyc",
+                      ".git/**",
+                      ".pytest_cache/**",
+                      ".coverage",
+                      "node_modules/**",
+                      "dockers/**"
+                  ]
+              )
+              print("Upload completed successfully")
+          except Exception as e:
+              print(f"Error uploading files: {e}")
+              sys.exit(1)
+
 
         if __name__ == "__main__":
             main()
