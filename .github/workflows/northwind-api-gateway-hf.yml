@@ -4,8 +4,8 @@ env:
   PROJECT_PATH: nestjs/northwind
   HF_TOKEN: ${{ secrets.HF_TOKEN }}
   HF_USERNAME: ${{ secrets.HF_USERNAME }}
-  HF_SPACE_NAME: ${{ secrets.HF_SPACE_NORTHWIND_API_GATEWAY }}
-  REPO_ID: ${{ secrets.HF_USERNAME }}/${{ secrets.HF_SPACE_NORTHWIND_API_GATEWAY }}
+  HF_SPACE_NAME: "northwind-api-gateway" #${{ secrets.HF_SPACE_NORTHWIND_API_GATEWAY }}
+  REPO_ID: ${{ secrets.HF_USERNAME }}/"northwind-api-gateway"  #${{ secrets.HF_SPACE_NORTHWIND_API_GATEWAY }}
 
 on:
   push:
@@ -78,7 +78,7 @@ jobs:
         # Build the NestJS app
         RUN npm run build:apigateway
 
-        RUN ls -l
+        RUN mkdir -p dist/libs/proto && cp -r libs/proto dist/libs
 
         # Start the application
         CMD ["node", "dist/apps/apigateway/main.js"]

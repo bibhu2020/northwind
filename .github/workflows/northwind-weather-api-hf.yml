@@ -1,19 +1,19 @@
 name: Deploy Northwind Weather Api to Hugging Face
 
 env:
-  PROJECT_BASE: nestjs/northwind
-  PROJECT_PATH: nestjs/northwind/apps/weatherapi
+  PROJECT_PATH: nestjs/northwind
   HF_TOKEN: ${{ secrets.HF_TOKEN }}
   HF_USERNAME: ${{ secrets.HF_USERNAME }}
-  HF_SPACE_NAME: ${{ secrets.HF_SPACE_NORTHWIND_WEATHER_API }}
-  REPO_ID: ${{ secrets.HF_USERNAME }}/${{ secrets.HF_SPACE_NORTHWIND_WEATHER_API }}
+  HF_SPACE_NAME: "northwind-weather-api" 
+  REPO_ID: ${{ secrets.HF_USERNAME }}/"northwind-weather-api"  
 
 on:
   push:
     branches:
       - main
+      - feature/54-northwind-hf
     paths:
-      - 'nestjs/northwind/apps/weatherapi/**'
+      - 'nestjs/northwind/**'
   workflow_dispatch:
 
 jobs:
@@ -23,7 +23,17 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      # with:
+      #   fetch-depth:   0  # this is important to fetch all folders
 
+    - name: List all folders recursively with file counts
+      run: |
+        echo "Listing all folders in $PROJECT_PATH recursively with file counts:"
+        find "$PROJECT_PATH" -type d | while read dir; do
+            file_count=$(find "$dir" -maxdepth 1 -type f | wc -l)
+            echo "Folder: $dir, Files: $file_count"
+        done
+  
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -34,23 +44,76 @@ jobs:
         python -m pip install --upgrade pip
         pip install huggingface_hub
 
-    - name: Prepare Space files
+    - name: Configure npm for GitHub Packages
       run: |
-        echo "Copying packaging files from PROJECT_BASE to PROJECT_PATH..."
-        cp $PROJECT_BASE/*.* $PROJECT_PATH/ || echo "package.json not found in $PROJECT_BASE"
-
-        echo "Verifying copied files:"
-        ls -la $PROJECT_PATH    
-
-    - name: Set up npmrc
-      run: |
+        echo "Project path: $PROJECT_PATH"
+        echo "Creating .npmrc in project path..."
         echo "@bibhu2020:registry=https://npm.pkg.github.com" > $PROJECT_PATH/.npmrc
-        echo "//npm.pkg.github.com/:_authToken=${GH_TOKEN}" >> $PROJECT_PATH/.npmrc
-        
+        echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> $PROJECT_PATH/.npmrc
+
+        echo "✅ .npmrc file created at:"
+        realpath $PROJECT_PATH/.npmrc
+
+        echo "📂 Listing directory contents:"
+        ls -la $PROJECT_PATH
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+    - name: Generate Dockerfile for Northwind API Gateway
+      run: |
+        cat << 'EOF' > $PROJECT_PATH/Dockerfile
+        # Use an official Node.js runtime as a parent image
+        FROM node:20-alpine AS builder
+
+        # Set working directory
+        WORKDIR /app
+
+        # Install dependencies
+        COPY package*.json ./
+        RUN npm install
+
+        # Copy the rest of the app's source code
+        COPY . .
+
+        # Build the NestJS app
+        RUN npm run build:weatherapi
+
+        RUN mkdir -p dist/libs/proto && cp -r libs/proto dist/libs
+
+        # Start the application
+        CMD ["node", "dist/apps/weatherapi/main.js"]
+
+        # Expose app port
+        EXPOSE 8080
+        EOF
+
+    - name: Verify Dockerfile
+      run: |
+        echo "Dockerfile contents:"
+        cat $PROJECT_PATH/Dockerfile
+    
+    - name: Generate README.md for Northwind Weather API
+      run: |
+        cat << 'EOF' > $PROJECT_PATH/README.md
+        ---
+        title: Northwind Weather API
+        emoji: 🐳
+        colorFrom: blue
+        colorTo: indigo
+        sdk: docker
+        app_file: app.py
+        pinned: false
+        ---
+
+        # 🐳 Northwind Weather API
+
+        Dockerized NestJS Weather API for the Northwind dataset, running on Node.js 20 and exposing port 8080.
+        EOF    
+
     - name: Create upload script
       run: |
         cat << 'EOF' > upload_to_hf.py
-        from huggingface_hub import HfApi, create_repo
+        from huggingface_hub import HfApi, create_repo, HfFolder
         import os
         import sys
         from pathlib import Path
@@ -65,9 +128,9 @@ jobs:
             exclusions = {
                 '.env', '.env.*', '.venv', 'venv', 
                 '__pycache__', '*.pyc', '.git',
-                '.pytest_cache', '.coverage'
+                '.pytest_cache', '.coverage', "dockers"
             }
-            
+
             path_parts = Path(path).parts
             return any(
                 any(part.startswith(excl.replace('*', '')) for part in path_parts)
@@ -75,16 +138,17 @@ jobs:
             )
 
         def main():
-            # Initialize the Hugging Face API
+            # Initialize Hugging Face API
+            HfFolder.save_token(TOKEN)  # Authenticate in CI/CD
             api = HfApi()
-            
+
+            # Create the Space repository if it doesn't exist
             try:
-                # Try to create the repository
                 create_repo(
                     repo_id=REPO_ID,
                     token=TOKEN,
                     repo_type="space",
-                    space_sdk="gradio",
+                    space_sdk="docker",  # Must specify docker, gradio, streamlit, or static
                     private=False
                 )
                 print(f"Created new repository: {REPO_ID}")
@@ -94,9 +158,9 @@ jobs:
                 else:
                     print(f"Error creating repository: {e}")
                     sys.exit(1)
-            
+
+            # Upload folder with exclusions
             try:
-                # Upload the folder with exclusions
                 print(f"Uploading files to {REPO_ID}...")
                 api.upload_folder(
                     folder_path=PROJECT_PATH,
@@ -111,8 +175,9 @@ jobs:
                         "*.pyc",
                         ".git/**",
                         ".pytest_cache/**",
-                        ".coverage"
-                    ]
+                        ".coverage",
+                        "dockers/**",
+                    ],
                 )
                 print("Upload completed successfully")
             except Exception as e:
@@ -122,9 +187,6 @@ jobs:
         if __name__ == "__main__":
             main()
         EOF
-
-    - name: Upload to Hugging Face Hub
-      run: python upload_to_hf.py
 
     - name: Upload to Hugging Face Hub
       run: python upload_to_hf.py
