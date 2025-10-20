@@ -180,6 +180,9 @@ jobs:
       run: |
         if [ -n "$(ls -A libs/proto 2>/dev/null)" ]; then
           echo "Files exist in libs/proto"
+          ls -la libs/proto
+          ls -la libs/common
+          ls -la libs
         else
           echo "No files in libs/proto"
         fi
