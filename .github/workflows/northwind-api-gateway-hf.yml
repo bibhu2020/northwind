@@ -14,6 +14,7 @@ on:
       - feature/54-northwind-hf
     paths:
       - 'nestjs/northwind/apps/apigateway/**'
+      - 'nestjs/northwind/libs/**'
   workflow_dispatch:
 
 jobs:
