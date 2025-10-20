@@ -1,8 +1,7 @@
 name: Deploy Northwind Api Gateway to Hugging Face
 
 env:
-  PROJECT_BASE: nestjs/northwind
-  PROJECT_PATH: nestjs/northwind/apps/apigateway
+  PROJECT_PATH: nestjs/northwind
   HF_TOKEN: ${{ secrets.HF_TOKEN }}
   HF_USERNAME: ${{ secrets.HF_USERNAME }}
   HF_SPACE_NAME: ${{ secrets.HF_SPACE_NORTHWIND_API_GATEWAY }}
@@ -35,15 +34,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install huggingface_hub
 
-    - name: Prepare Space files
-      run: |
-        echo "Copying missing nestjs packaging files (files only) from PROJECT_BASE to PROJECT_PATH..."
-        rsync -av --exclude='.npmrc' --exclude='README.md' --exclude='*/' $PROJECT_BASE/ $PROJECT_PATH/ \
-          || echo "No files copied from $PROJECT_BASE"
-
-        echo "Verifying copied files:"
-        ls -la $PROJECT_PATH
-
     - name: Configure npm for GitHub Packages
       run: |
         echo "Project path: $PROJECT_PATH"
@@ -58,6 +48,55 @@ jobs:
         ls -la $PROJECT_PATH
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+    - name: Generate Dockerfile for Northwind API Gateway
+      run: |
+        cat << 'EOF' > $PROJECT_PATH/Dockerfile
+        # Use an official Node.js runtime as a parent image
+        FROM node:20-alpine AS builder
+
+        # Set working directory
+        WORKDIR /app
+
+        # Install dependencies
+        COPY package*.json ./
+        RUN npm install
+
+        # Copy the rest of the app's source code
+        COPY . .
+
+        # Build the NestJS app
+        RUN npm run build:apigateway
+
+        # Start the application
+        CMD ["node", "dist/apps/apigateway/main.js"]
+
+        # Expose app port
+        EXPOSE 8080
+        EOF
+
+    - name: Verify Dockerfile
+      run: |
+        echo "Dockerfile contents:"
+        cat $PROJECT_PATH/Dockerfile
+    
+    - name: Generate README.md for Northwind API Gateway
+      run: |
+        cat << 'EOF' > $PROJECT_PATH/README.md
+        ---
+        title: Northwind API Gateway
+        emoji: 🐳
+        colorFrom: blue
+        colorTo: indigo
+        sdk: docker
+        app_file: app.py
+        pinned: false
+        ---
+
+        # 🐳 Northwind API Gateway
+
+        Dockerized NestJS API Gateway for the Northwind dataset, running on Node.js 20 and exposing port 8080.
+        EOF    
 
     - name: Create upload script
       run: |
