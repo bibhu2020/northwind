@@ -12,7 +12,7 @@ on:
   push:
     branches:
       - main
-      - 54-northwind-hf
+      - feature/54-northwind-hf
     paths:
       - 'nestjs/northwind/apps/apigateway/**'
   workflow_dispatch:
@@ -37,16 +37,27 @@ jobs:
 
     - name: Prepare Space files
       run: |
-        echo "Copying packaging files from PROJECT_BASE to PROJECT_PATH..."
-        cp $PROJECT_BASE/*.* $PROJECT_PATH/ || echo "package.json not found in $PROJECT_BASE"
+        echo "Copying missing nestjs packaging files from PROJECT_BASE to PROJECT_PATH..."
+        rsync -av --exclude='.npmrc' --exclude='README.md' $PROJECT_BASE/ $PROJECT_PATH/ \
+          || echo "No files copied from $PROJECT_BASE"
 
         echo "Verifying copied files:"
         ls -la $PROJECT_PATH    
 
-    - name: Set up npmrc
+    - name: Configure npm for GitHub Packages
       run: |
+        echo "Project path: $PROJECT_PATH"
+        echo "Creating .npmrc in project path..."
         echo "@bibhu2020:registry=https://npm.pkg.github.com" > $PROJECT_PATH/.npmrc
-        echo "//npm.pkg.github.com/:_authToken=${GH_TOKEN}" >> $PROJECT_PATH/.npmrc
+        echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> $PROJECT_PATH/.npmrc
+
+        echo "✅ .npmrc file created at:"
+        realpath $PROJECT_PATH/.npmrc
+
+        echo "📂 Listing directory contents:"
+        ls -la $PROJECT_PATH
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
     - name: Create upload script
       run: |
