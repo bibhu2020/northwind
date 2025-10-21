@@ -65,8 +65,15 @@ jobs:
         # Use an official Node.js runtime as a parent image
         FROM node:20-alpine AS builder
 
+        # Create app directory and set permissions
+        RUN mkdir -p /app /app/logs && \
+            chown -R node:node /app
+
         # Set working directory
         WORKDIR /app
+
+        # Switch to non-root user
+        USER node
 
         # Install dependencies
         COPY package*.json ./
@@ -75,10 +82,16 @@ jobs:
         # Copy the rest of the app's source code
         COPY . .
 
+        # Ensure proto files directory exists and copy proto files
+        RUN mkdir -p /app/libs/proto
+        COPY libs/proto/*.proto /app/libs/proto/
+
         # Build the NestJS app
         RUN npm run build:apigateway
 
-        RUN mkdir -p dist/libs/proto && cp -r libs/proto dist/libs
+        # Copy proto files to dist directory
+        RUN mkdir -p /app/dist/libs/proto && \
+            cp -r /app/libs/proto/*.proto /app/dist/libs/proto/
 
         # Start the application
         CMD ["node", "dist/apps/apigateway/main.js"]
