@@ -26,13 +26,40 @@ jobs:
       # with:
       #   fetch-depth:   0  # this is important to fetch all folders
 
-    - name: List all folders recursively with file counts
+    - name: Verify project structure
       run: |
-        echo "Listing all folders in $PROJECT_PATH recursively with file counts:"
-        find "$PROJECT_PATH" -type d | while read dir; do
-            file_count=$(find "$dir" -maxdepth 1 -type f | wc -l)
-            echo "Folder: $dir, Files: $file_count"
-        done
+        echo "Verifying project structure in $PROJECT_PATH..."
+        
+        # Check proto files
+        echo "Checking proto files..."
+        if [ -d "$PROJECT_PATH/libs/proto" ]; then
+          echo "✅ Proto directory exists"
+          ls -la "$PROJECT_PATH/libs/proto"
+        else
+          echo "❌ Proto directory not found"
+          exit 1
+        fi
+
+        # Check package.json files
+        echo "Checking package.json files..."
+        if [ -f "$PROJECT_PATH/package.json" ]; then
+          echo "✅ Root package.json exists"
+        else
+          echo "❌ Root package.json not found"
+          exit 1
+        fi
+
+        # Check API Gateway source
+        echo "Checking API Gateway source..."
+        if [ -d "$PROJECT_PATH/apps/apigateway" ]; then
+          echo "✅ API Gateway directory exists"
+          ls -la "$PROJECT_PATH/apps/apigateway"
+        else
+          echo "❌ API Gateway directory not found"
+          exit 1
+        fi
+
+        echo "Project structure verification complete ✅"
   
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -72,32 +99,46 @@ jobs:
         # Set working directory
         WORKDIR /app
 
+        # Copy package files first for better caching
+        COPY --chown=node:node package*.json ./
+        COPY --chown=node:node ./apps/apigateway/package*.json ./apps/apigateway/
+        COPY --chown=node:node ./libs/proto ./libs/proto
+
         # Switch to non-root user
         USER node
 
         # Install dependencies
-        COPY package*.json ./
-        RUN npm install
+        RUN npm ci
 
         # Copy the rest of the app's source code
-        COPY . .
-
-        # Ensure proto files directory exists and copy proto files
-        RUN mkdir -p /app/libs/proto
-        COPY libs/proto/*.proto /app/libs/proto/
+        COPY --chown=node:node . .
 
         # Build the NestJS app
         RUN npm run build:apigateway
 
-        # Copy proto files to dist directory
-        RUN mkdir -p /app/dist/libs/proto && \
-            cp -r /app/libs/proto/*.proto /app/dist/libs/proto/
+        # Create production image
+        FROM node:20-alpine
 
-        # Start the application
-        CMD ["node", "dist/apps/apigateway/main.js"]
+        # Create app directory and set permissions
+        RUN mkdir -p /app /app/logs && \
+            chown -R node:node /app
+
+        WORKDIR /app
+
+        # Copy built files from builder
+        COPY --from=builder --chown=node:node /app/dist ./dist
+        COPY --from=builder --chown=node:node /app/libs/proto ./libs/proto
+        COPY --from=builder --chown=node:node /app/package*.json ./
+        COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+
+        # Switch to non-root user
+        USER node
 
         # Expose app port
         EXPOSE 8080
+
+        # Start the application
+        CMD ["node", "dist/apps/apigateway/main.js"]
         EOF
 
     - name: Verify Dockerfile
